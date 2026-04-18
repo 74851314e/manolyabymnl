@@ -512,10 +512,23 @@ opM(i>=0?'Şube Düzenle':'Yeni Şube',
 '<div class="fg"><label>Telefon</label><input id="m_ph" value="'+esc(b.phone)+'"></div></div>'+
 '<div class="fg"><label>Adres</label><textarea id="m_address" rows="2">'+b.address+'</textarea></div>'+
 '<div class="fg"><label>E-posta</label><input id="m_em" value="'+esc(b.email)+'"></div>'+
-'<div class="fg"><label>Google Maps Konum</label><input id="m_mq" value="'+esc(b.mapQ)+'" placeholder="Örn: Sahrayıcedit+Kadıköy+İstanbul" oninput="updateMapPv()"><small>Konumu yazın, altta harita önizlemesi görünecektir. Doğru konumu gösterdiğinden emin olun.</small></div>'+
-'<div class="fg" id="mapPvWrap">'+(b.mapQ?'<label>Harita Önizleme</label><div class="map-pv"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(b.mapQ.replace(/\+/g,' '))+'&output=embed&z=15" loading="lazy"></iframe></div>':'')+'</div>');}
+'<div class="fg"><label>Google Maps Konum</label><textarea id="m_mq" rows="2" placeholder="Google Maps&#39;ten &quot;Paylaş → Haritayı yerleştir&quot; iframe kodunu VEYA URL&#39;yi yapıştırın" oninput="updateMapPv()">'+esc(b.mapQ)+'</textarea><small>💡 Google Maps → şubeyi bulun → Paylaş → Haritayı yerleştir → Kodu Kopyala → buraya yapıştırın. iframe kodunun tamamı veya sadece src=&quot;...&quot; içindeki URL çalışır.</small></div>'+
+'<div class="fg" id="mapPvWrap">'+(b.mapQ?'<label>Harita Önizleme</label><div class="map-pv"><iframe src="'+mapSrc(b.mapQ)+'" loading="lazy"></iframe></div>':'')+'</div>');}
 
-function updateMapPv(){const q=gv('m_mq');const w=$('mapPvWrap');if(q.length>3){w.innerHTML='<label>Harita Önizleme</label><div class="map-pv"><iframe src="https://maps.google.com/maps?q='+encodeURIComponent(q.replace(/\+/g,' '))+'&output=embed&z=15" loading="lazy"></iframe></div>';}else{w.innerHTML='';}}
+// Smart map URL extractor - iframe kodundan veya URL'den veya arama sorgusundan src üret
+function mapSrc(q){
+  if(!q)return '';
+  q=q.trim();
+  // Eğer iframe kodu yapıştırılmışsa, src'yi çıkar
+  const m=q.match(/src=["']([^"']+)["']/);
+  if(m)return m[1];
+  // Eğer embed URL ise direkt kullan
+  if(q.indexOf('http')===0)return q;
+  // Aksi halde basit arama sorgusu varsay
+  return 'https://maps.google.com/maps?q='+encodeURIComponent(q.replace(/\+/g,' '))+'&output=embed&z=15';
+}
+
+function updateMapPv(){const q=gv('m_mq');const w=$('mapPvWrap');if(q.length>3){w.innerHTML='<label>Harita Önizleme</label><div class="map-pv"><iframe src="'+mapSrc(q)+'" loading="lazy"></iframe></div>';}else{w.innerHTML='';}}
 
 function oNews(i){mT='nws';mI=i;const n=i>=0?D.news[i]:{title:'',date:'',desc:'',img:''};
 opM(i>=0?'Haber Düzenle':'Yeni Haber',
