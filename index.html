@@ -410,6 +410,89 @@ h1,h2,h3,h4,h5 {
 .modal-body h3 { font-size:28px; margin-bottom:6px; }
 .modal-body .modal-cat { color: var(--gold); font-size:17px; font-weight:500; }
 
+/* === Product Modal: geniş ekranlara göre responsive === */
+.product-modal-content {
+  max-width: min(1100px, 92vw) !important;
+  max-height: 92vh;
+  display: flex; flex-direction: row;
+  overflow: hidden;
+  padding: 0;
+}
+.product-modal-content .pm-image {
+  flex: 1 1 55%;
+  min-height: 100%;
+  background-size: cover; background-position: center;
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.product-modal-content .pm-body {
+  flex: 1 1 45%;
+  padding: 48px 44px;
+  display: flex; flex-direction: column; justify-content: center;
+  overflow-y: auto;
+  max-height: 92vh;
+}
+.product-modal-content .pm-body .pm-cat {
+  color: var(--gold); font-size: 13px; letter-spacing: 3px;
+  text-transform: uppercase; font-weight: 500; margin-bottom: 14px;
+  display: inline-flex; align-items: center; gap: 10px;
+}
+.product-modal-content .pm-body .pm-cat::before {
+  content: ''; width: 28px; height: 1.5px; background: var(--gold);
+}
+.product-modal-content .pm-body h3 {
+  font-family: 'Playfair Display', serif; font-size: clamp(28px, 3vw, 40px);
+  line-height: 1.15; color: var(--green-dark); margin-bottom: 20px;
+  font-weight: 700;
+}
+.product-modal-content .pm-body .pm-desc {
+  font-family: 'Lora', serif; font-size: 16px; line-height: 1.75;
+  color: #444;
+}
+.product-modal-content .pm-counter {
+  position: absolute; bottom: 20px; left: 20px; z-index: 10;
+  background: rgba(16,66,36,0.85); color: var(--white);
+  padding: 6px 16px; border-radius: 50px;
+  font-size: 12px; letter-spacing: 1.5px; font-weight: 500;
+}
+/* Prev/Next navigation buttons */
+.product-modal-nav {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 48px; height: 48px; border-radius: 50%;
+  background: rgba(255,255,255,0.95); border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25); transition: all 0.25s ease;
+  z-index: 20;
+}
+.product-modal-nav:hover {
+  background: var(--gold); transform: translateY(-50%) scale(1.08);
+}
+.product-modal-nav:hover svg { stroke: var(--white); }
+.product-modal-nav svg { stroke: var(--green-dark); transition: stroke 0.25s ease; }
+.product-modal-nav.prev { left: -24px; }
+.product-modal-nav.next { right: -24px; }
+.product-modal-nav:disabled { opacity: 0.35; cursor: not-allowed; }
+.product-modal-nav:disabled:hover { background: rgba(255,255,255,0.95); transform: translateY(-50%); }
+.product-modal-nav:disabled:hover svg { stroke: var(--green-dark); }
+
+/* Mobil */
+@media (max-width: 820px) {
+  .product-modal-content {
+    flex-direction: column;
+    max-width: 95vw !important;
+    max-height: 92vh;
+  }
+  .product-modal-content .pm-image {
+    flex: 0 0 auto; height: 280px; width: 100%;
+  }
+  .product-modal-content .pm-body {
+    padding: 28px 24px; flex: 1 1 auto;
+  }
+  .product-modal-nav.prev { left: 12px; }
+  .product-modal-nav.next { right: 12px; }
+  .product-modal-nav { width: 40px; height: 40px; }
+}
+
 /* ========== KURUMSAL PAGE ========== */
 .kurumsal-about {
   max-width:1100px; margin: 60px auto; padding: 0 40px;
@@ -1389,8 +1472,14 @@ h1,h2,h3,h4,h5 {
 
 <!-- ========== PRODUCT MODAL ========== -->
 <div class="modal-overlay" id="productModal">
-  <div class="modal-content">
+  <div class="modal-content product-modal-content">
     <button class="modal-close" onclick="closeModal('productModal')">✕</button>
+    <button class="product-modal-nav prev" id="pmNavPrev" onclick="navigateProduct(-1)" aria-label="Önceki">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="product-modal-nav next" id="pmNavNext" onclick="navigateProduct(1)" aria-label="Sonraki">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
     <div id="productModalContent"></div>
   </div>
 </div>
@@ -1739,21 +1828,67 @@ function renderProducts() {
   ).join('');
 }
 
+// Aktif ürün modal durumu
+let pmList = [];        // Şu an görünen/filtrelenmiş ürünler
+let pmCurrentIdx = 0;   // pmList içindeki geçerli index
+
 function openProductModal(idx) {
-  const p = products[idx];
-  document.getElementById('productModalContent').innerHTML = `
-    <div class="img-placeholder img-bg modal-img" style="${p.img ? 'background:url('+p.img+') center/cover no-repeat' : 'background:'+gradients[p.bg]};aspect-ratio:1;display:flex;align-items:center;justify-content:center">
-      ${p.img ? '' : '<span style="font-size:80px;opacity:0.3">🍰</span>'}
-    </div>
-    <div class="modal-body">
-      <h3>${p.name}</h3>
-      <span class="modal-cat">${p.cat}</span>
-      ${p.desc ? '<p style="margin-top:12px;color:var(--text-body);line-height:1.6">'+p.desc+'</p>' : ''}
-    </div>
-  `;
+  // Modal listesini şu anki filtrelenmiş ürünlerle kur
+  pmList = activeFilter === 'Hepsi' ? products.slice() : products.filter(p => p.cat === activeFilter);
+  // Tıklanan ürünü pmList içinde bul
+  const clicked = products[idx];
+  pmCurrentIdx = pmList.indexOf(clicked);
+  if (pmCurrentIdx < 0) pmCurrentIdx = 0;
+  renderProductModal();
   document.getElementById('productModal').classList.add('active');
   document.body.style.overflow = 'hidden';
 }
+
+function renderProductModal() {
+  const p = pmList[pmCurrentIdx];
+  if (!p) return;
+  const total = pmList.length;
+  const bg = p.img ? 'background-image:url('+p.img+')' : 'background:'+gradients[p.bg || 0];
+  document.getElementById('productModalContent').innerHTML = `
+    <div class="pm-image" style="${bg}">
+      ${p.img ? '' : '<span style="font-size:80px;opacity:0.3">🍰</span>'}
+      ${total > 1 ? '<div class="pm-counter">'+(pmCurrentIdx+1)+' / '+total+'</div>' : ''}
+    </div>
+    <div class="pm-body">
+      <div class="pm-cat">${p.cat || ''}</div>
+      <h3>${p.name || ''}</h3>
+      ${p.desc ? '<div class="pm-desc">'+p.desc+'</div>' : ''}
+    </div>
+  `;
+  // Prev/Next butonlarını gizle/göster
+  const prev = document.getElementById('pmNavPrev');
+  const next = document.getElementById('pmNavNext');
+  if (prev && next) {
+    if (total <= 1) {
+      prev.style.display = 'none'; next.style.display = 'none';
+    } else {
+      prev.style.display = ''; next.style.display = '';
+      prev.disabled = false;
+      next.disabled = false;
+    }
+  }
+}
+
+function navigateProduct(dir) {
+  if (pmList.length <= 1) return;
+  pmCurrentIdx = (pmCurrentIdx + dir + pmList.length) % pmList.length;
+  renderProductModal();
+}
+
+// Klavye okları ile gezinme
+document.addEventListener('keydown', function(e) {
+  const modal = document.getElementById('productModal');
+  if (modal && modal.classList.contains('active')) {
+    if (e.key === 'ArrowLeft') { e.preventDefault(); navigateProduct(-1); }
+    else if (e.key === 'ArrowRight') { e.preventDefault(); navigateProduct(1); }
+    else if (e.key === 'Escape') { closeModal('productModal'); }
+  }
+});
 
 // ===== POPULAR PRODUCTS =====
 
